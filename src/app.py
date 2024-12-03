@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, Characters, Planets, Species, Favorites
 #from models import Person
 
 app = Flask(__name__)
@@ -44,6 +44,66 @@ def handle_hello():
     }
 
     return jsonify(response_body), 200
+
+# Get all Charactes and specific characters
+@app.route("/people", methods=["GET"])
+def get_all_people():
+
+    all_people = Characters.query.all()
+    if all_people is None:
+        return jsonify("No records found."), 404
+    else:
+        all_people = list(map(lambda x: x.serialize(), all_people))
+        return jsonify(all_people), 200
+
+
+@app.route("/people/<int:characters_id>", methods=["GET"])
+def get_person(characters_id):
+
+    single_person = Characters.query.get(characters_id)
+
+    if single_person is None:
+        raise APIException(f'Person ID {characters_id} is not found!', status_code=404)
+    
+    single_person = single_person.serialize()
+    return jsonify(single_person), 200
+
+
+# @app.route("/planets", methods=["GET"])
+# def get_all_planets():
+#     pass
+
+# @app.route("/planets/<int:planets_id>", methods=["GET"])
+# def get_planet(planets_id):
+#     pass
+
+# @app.route("/species", methods=["GET"])
+# def get_all_species():
+#     pass
+
+# @app.route("/species/<int:species_id>", methods=["GET"])
+# def get_specie(species_id):
+#     pass
+
+@app.route("/favorites/people", methods=["POST"])
+def add_favorite_person():
+
+    data = request.get_json()
+    new_favorite_person = Favorites(user_id = data["user_id"], characters_id = data["characters_id"])
+    db.session.add(new_favorite_person)
+    db.session.commit()
+
+    return jsonify("Your favorite was added!"), 200    
+
+
+
+
+
+
+
+
+
+
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
